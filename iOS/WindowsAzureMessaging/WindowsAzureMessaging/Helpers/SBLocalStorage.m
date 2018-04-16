@@ -7,6 +7,7 @@
 #import "SBNotificationHubHelper.h"
 #import "SBRegistration.h"
 #import "SBTemplateRegistration.h"
+#import "KFKeychain.h"
 
 @implementation SBLocalStorage
 
@@ -124,18 +125,21 @@ static const NSString* storageVersion = @"v1.0.0";
 {
     self->_registrations = [[NSMutableDictionary alloc] init];
     
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    //NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
-    self->deviceToken = [defaults objectForKey:self->_deviceTokenKey];
+    //self->deviceToken = [defaults objectForKey:self->_deviceTokenKey];
+    self->deviceToken = [KFKeychain loadObjectForKey:self->_deviceTokenKey];
     
-    NSString* version = [defaults objectForKey:self->_versionKey];
+    //NSString* version = [defaults objectForKey:self->_versionKey];
+    NSString* version = [KFKeychain loadObjectForKey:self->_versionKey];
     isRefreshNeeded = version == nil || ![version isEqualToString: storageVersion];
     if( isRefreshNeeded )
     {
         return;
     }
     
-    NSArray* registrations = [defaults objectForKey:self->_registrationsKey];
+    //NSArray* registrations = [defaults objectForKey:self->_registrationsKey];
+    NSArray* registrations = [KFKeychain loadObjectForKey:self->_registrationsKey];
     for (NSString* regStr in registrations)
     {
         StoredRegistrationEntry* reg = [[StoredRegistrationEntry alloc] initWithString:regStr];
@@ -145,10 +149,14 @@ static const NSString* storageVersion = @"v1.0.0";
 
 - (void) flush
 {
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    //NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
    
-    [defaults setObject:self->deviceToken forKey:self->_deviceTokenKey];
-    [defaults setObject:storageVersion forKey:self->_versionKey];
+    //[defaults setObject:self->deviceToken forKey:self->_deviceTokenKey];
+    //[defaults setObject:storageVersion forKey:self->_versionKey];
+    
+    [KFKeychain saveObject:self->deviceToken forKey:self->_deviceTokenKey];
+    [KFKeychain saveObject:storageVersion forKey:self->_versionKey];
+    
     
     NSMutableArray* registrations = [[NSMutableArray alloc] init];
     for (NSString* key in [self->_registrations allKeys])
@@ -159,15 +167,16 @@ static const NSString* storageVersion = @"v1.0.0";
     
     if( [registrations count] == 0)
     {
-        [defaults removeObjectForKey:self->_registrationsKey];
+        //[defaults removeObjectForKey:self->_registrationsKey];
+        [KFKeychain deleteObjectForKey:self->_registrationsKey];
     }
     else
     {
-        [defaults setObject:registrations forKey:self->_registrationsKey];
-        
+        //[defaults setObject:registrations forKey:self->_registrationsKey];
+        [KFKeychain saveObject:registrations forKey:self->_registrationsKey];
     }
-
-    [defaults synchronize];
+    
+    //[defaults synchronize];
 }
 
 - (void) refreshFinishedWithDeviceToken:(NSString*)newDeviceToken
@@ -182,3 +191,4 @@ static const NSString* storageVersion = @"v1.0.0";
 }
 
 @end
+
